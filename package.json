@@ -8,7 +8,8 @@
     "shantycrawl-mcp": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "repository": {
     "type": "git",

@@ -23,6 +23,8 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 
 ## Work Guidance
 
+- This server lazy-loads 22 advanced tools via `tool_enable`. Only 6 base tools appear in `tools/list` initially. Call `tool_enable("<name>")` to activate `map`, `extract`, `parse`, `agent`, `interact`, `research_*`, or `monitor_*` tools.
+- The server also exposes a `shantycrawl-setup` prompt with full usage instructions — fetch it via `GetPromptRequestSchema` when connecting.
 - Development prompts go in `docs/` subtree as needed.
 - Build output goes to `dist/`. Config reference lives in `~/shantio/dotfiles/opencode/opencode.jsonc`.
 - AGENTS.md is the single source of project contracts — update when purpose, scope, or workflow changes.
@@ -131,3 +133,4 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Child DOX Index
 
 - **`src/AGENTS.md`** — Source code structure, file map, local contracts, and work guidance for the MCP server implementation.
+- **`skills/`** — SKILL.md for opencode users on how to use tool_enable with this server.
