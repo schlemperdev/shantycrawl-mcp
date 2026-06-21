@@ -16,6 +16,7 @@ const serverInfo = {
 const server = new Server(serverInfo, {
   capabilities: {
     tools: {},
+    prompts: {},
   },
 });
 

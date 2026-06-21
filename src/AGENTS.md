@@ -15,11 +15,11 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 ### File Map
 | File | Responsibility |
 |------|---------------|
-| `index.ts` | Server bootstrap, transport connect |
+| `index.ts` | Server bootstrap, transport connect (declares `prompts` capability) |
 | `state.ts` | In-memory `Set<string>` tracking active advanced tools |
-| `schemas.ts` | `Tool` definitions for 5 base tools (`scrape`, `crawl`, `search`, `tool_enable`, `tool_disable`) |
-| `tools.ts` | Registry of 23 advanced tools with minimal schemas |
-| `handlers.ts` | `ListToolsRequestSchema` (conditional) and `CallToolRequestSchema` (state + HTTP routing) |
+| `schemas.ts` | `Tool` definitions for 6 base tools (`scrape`, `crawl`, `search`, `check_crawl_status`, `tool_enable`, `tool_disable`) |
+| `tools.ts` | Registry of 22 advanced tools with minimal schemas |
+| `handlers.ts` | `ListToolsRequestSchema` (conditional), `ListPromptsRequestSchema`, `GetPromptRequestSchema`, and `CallToolRequestSchema` (state + HTTP routing) |
 | `firecrawl.ts` | HTTP routing map + `executeTool()` bridge to `http://localhost:3002` |
 
 ### Conventions
@@ -43,6 +43,9 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 - New API base URLs: add constant in `firecrawl.ts`
 - Keep descriptions ≤4 words to minimize context tokens
 - Only include essential params in schemas — omit niche options
+- `tool_enable` without args lists all advanced tools with status; invalid names suggest available tools
+- `tool_disable` without args lists currently active tools; base tools cannot be disabled
+- The server exposes `shantycrawl-setup` via `ListPromptsRequestSchema`/`GetPromptRequestSchema` — update prompt content when tool inventory changes
 
 ## Verification
 

@@ -44,7 +44,7 @@ export const searchTool: Tool = {
 
 export const toolEnableTool: Tool = {
   name: "tool_enable",
-  description: "Activate an advanced tool for this session",
+  description: "Activate map, extract, parse, agent, interact, research_*, monitor_*. Call without args to list all 22 available.",
   inputSchema: {
     type: "object",
     properties: {
