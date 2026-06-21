@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 
+import { createRequire } from "module";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { setupHandlers } from "./handlers.js";
 
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
+
 const serverInfo = {
   name: "shantycrawl-mcp",
-  version: "0.1.0",
+  version,
 };
 
 const server = new Server(serverInfo, {
