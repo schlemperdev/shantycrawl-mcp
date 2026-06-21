@@ -6,11 +6,11 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 
 ## Ownership
 
-- Source: `~/projects/shantycrawl-mcp/`
+- Published as `shantycrawl-mcp` on npm.
+- Source at `~/projects/shantycrawl-mcp/`.
 - Stack: Node.js + TypeScript + `@modelcontextprotocol/sdk`
 - Transport: stdio
-- API target: `http://localhost:3002` (Docker Firecrawl stack)
-- Future npm package under `@shantio` org or standalone scope.
+- API target: configurable via `FIRECRAWL_API_URL` env var (default `http://localhost:3002`).
 
 ## Local Contracts
 
@@ -19,17 +19,21 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - In-memory state tracks which advanced tools are active in the session.
 - `tool_enable` adds tool to state and emits `notifications/tools/list_changed`.
 - `tool_disable` removes tool from state and emits `notifications/tools/list_changed`.
-- Extraction tools (scrape, crawl, etc.) call Firecrawl Docker API at `http://localhost:3002` via HTTP fetch, return formatted Markdown.
+- Extraction tools (scrape, crawl, etc.) call Firecrawl API at the configured `FIRECRAWL_API_URL` via HTTP fetch, return formatted Markdown.
 
 ## Work Guidance
 
 - Development prompts go in `docs/` subtree as needed.
-- Build output goes to `dist/`. Config reference lives in `dotfiles/opencode/opencode.jsonc`.
+- Build output goes to `dist/`. Config reference lives in `~/shantio/dotfiles/opencode/opencode.jsonc`.
 - AGENTS.md is the single source of project contracts — update when purpose, scope, or workflow changes.
+- To add a tool: register schema in `tools.ts`, add route in `firecrawl.ts`.
+- Keep schemas minimal (≤4 word descriptions, only vital params).
 
 ## Verification
 
-None yet. `npm run build` must compile without errors.
+- `npm run build` must compile with zero errors
+- `npm start` must start without crashing
+- Integration: 5 base tools on list, `tool_enable` activates advanced tools, `scrape` returns markdown
 
 ---
 
@@ -115,4 +119,4 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-This project is not yet indexed. Before continuing you must scan the project, build the DOX tree and replace this message with the actual index. Go deep and scan files recursively to properly evaluate complexity and create nested DOX files where needed.
+- **`src/AGENTS.md`** — Source code structure, file map, local contracts, and work guidance for the MCP server implementation.

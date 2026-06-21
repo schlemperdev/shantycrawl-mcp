@@ -1,0 +1,45 @@
+{
+  "name": "shantycrawl-mcp",
+  "version": "0.1.0",
+  "description": "Dynamic Firecrawl MCP server with lazy-loading tool architecture",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "shantycrawl-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schlemperdev/shantycrawl-mcp.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "firecrawl",
+    "web-search",
+    "modelcontextprotocol",
+    "claude",
+    "web-scraping"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
