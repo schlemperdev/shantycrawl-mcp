@@ -1,6 +1,6 @@
 {
   "name": "shantycrawl-mcp",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Dynamic Firecrawl MCP server with lazy-loading tool architecture",
   "type": "module",
   "main": "dist/index.js",
