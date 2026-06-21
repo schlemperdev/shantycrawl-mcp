@@ -1,4 +1,6 @@
-const API_BASE = process.env.FIRECRAWL_API_URL ?? "http://localhost:3002";
+const API_KEY = process.env.FIRECRAWL_API_KEY ?? "";
+const DEFAULT_BASE = API_KEY ? "https://api.firecrawl.dev" : "http://localhost:3002";
+const API_BASE = process.env.FIRECRAWL_API_URL ?? DEFAULT_BASE;
 
 type HttpMethod = "POST" | "GET" | "DELETE" | "PATCH";
 
@@ -70,7 +72,9 @@ export async function executeTool(toolName: string, args: Record<string, unknown
   const url = `${API_BASE}${path}`;
 
   try {
-    const fetchOptions: RequestInit = { method: route.method, headers: {} };
+    const headers: Record<string, string> = {};
+    if (API_KEY) headers["Authorization"] = `Bearer ${API_KEY}`;
+    const fetchOptions: RequestInit = { method: route.method, headers };
 
     if (route.method === "POST" || route.method === "PATCH") {
       (fetchOptions.headers as Record<string, string>)["Content-Type"] = "application/json";

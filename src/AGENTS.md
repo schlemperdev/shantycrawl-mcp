@@ -20,7 +20,7 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 | `schemas.ts` | `Tool` definitions for 6 base tools (`scrape`, `crawl`, `search`, `check_crawl_status`, `tool_enable`, `tool_disable`) |
 | `tools.ts` | Registry of 22 advanced tools with minimal schemas |
 | `handlers.ts` | `ListToolsRequestSchema` (conditional), `ListPromptsRequestSchema`, `GetPromptRequestSchema`, and `CallToolRequestSchema` (state + HTTP routing) |
-| `firecrawl.ts` | HTTP routing map + `executeTool()` bridge to `http://localhost:3002` |
+| `firecrawl.ts` | HTTP routing map + `executeTool()` bridge to Firecrawl API (cloud or local) |
 
 ### Conventions
 - All imports use `.js` extension (NodeNext module resolution)
