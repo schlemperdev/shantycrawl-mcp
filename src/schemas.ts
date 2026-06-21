@@ -44,25 +44,35 @@ export const searchTool: Tool = {
 
 export const toolEnableTool: Tool = {
   name: "tool_enable",
-  description: "Activate an advanced tool for this session",
+  description: "Activate an advanced tool for this session. Use without arguments to list available tools.",
   inputSchema: {
     type: "object",
     properties: {
-      tool_name: { type: "string", description: "Tool name" },
+      tool_name: { type: "string", description: "Tool name (omit to list available tools)" },
     },
-    required: ["tool_name"],
   },
 };
 
 export const toolDisableTool: Tool = {
   name: "tool_disable",
-  description: "Deactivate an advanced tool for this session",
+  description: "Deactivate an advanced tool for this session. Use without arguments to list currently active tools. See tool_enable for the full list of available tools.",
   inputSchema: {
     type: "object",
     properties: {
-      tool_name: { type: "string", description: "Tool name" },
+      tool_name: { type: "string", description: "Tool name (omit to list active tools)" },
     },
-    required: ["tool_name"],
+  },
+};
+
+export const checkCrawlStatusTool: Tool = {
+  name: "check_crawl_status",
+  description: "Check crawl job progress",
+  inputSchema: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Crawl job ID" },
+    },
+    required: ["id"],
   },
 };
 
@@ -70,6 +80,7 @@ export const baseTools: Tool[] = [
   scrapeTool,
   crawlTool,
   searchTool,
+  checkCrawlStatusTool,
   toolEnableTool,
   toolDisableTool,
 ];

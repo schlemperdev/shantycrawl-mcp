@@ -18,7 +18,7 @@
 
 A lean, high-performance MCP server for Firecrawl engineered with a **lazy-loading tool architecture**. 
 
-Replaces the official `firecrawl-mcp` (which forces 28 tools into every session) with just **5 core tools**. Advanced capabilities are injected on-demand, saving thousands of context tokens in your AI coding sessions.
+Replaces the official `firecrawl-mcp` (which forces 28 tools into every session) with just **6 core tools**. Advanced capabilities are injected on-demand, saving thousands of context tokens in your AI coding sessions.
 
 ## 🔥 Key Features
 
@@ -40,21 +40,22 @@ FIRECRAWL_API_URL=http://localhost:3002 npx shantycrawl-mcp
 
 ## 🛠️ Tool Architecture
 
-### 1. Always Available (5 Core Tools)
+### 1. Always Available (6 Core Tools)
 
 | Tool | Description |
 | --- | --- |
 | `scrape` | Extract clean markdown from any URL |
 | `crawl` | Crawl a target website recursively |
 | `search` | Execute web searches via Firecrawl |
-| `tool_enable` | Dynamically inject an advanced tool into the active session |
-| `tool_disable` | Unload an advanced tool to free up LLM context |
+| `check_crawl_status` | Check crawl job progress and retrieve results |
+| `tool_enable` | Activate an advanced tool, or list available tools (no args) |
+| `tool_disable` | Deactivate an advanced tool, or list active tools (no args) |
 
-### 2. Lazy-Loaded Tools (23 Advanced)
+### 2. Lazy-Loaded Tools (22 Advanced)
 
 Activate any tool instantly during a chat session. Example: `tool_enable map` unblocks the mapping capability.
 
-* **Discovery:** `map`, `extract`, `parse`, `check_crawl_status`
+* **Discovery:** `map`, `extract`, `parse`
 * **AI Agent:** `agent`, `agent_status`
 * **Browser Interaction:** `interact`, `interact_stop`
 * **Research & Academic:** `research_search_papers`, `research_inspect_paper`, `research_read_paper`, `research_related_papers`, `research_search_github`
@@ -107,8 +108,8 @@ The official adapter registers all 28 tools upfront. Every time the LLM requests
 
 **shantycrawl-mcp** introduces a dynamic orchestration pattern:
 
-1. The client sees a minimalist 5-tool schema.
-2. When the AI needs an advanced action, it runs `tool_enable <tool_name>`.
+1. The client sees a minimalist 6-tool schema (scrape, crawl, search, check_crawl_status, tool_enable, tool_disable).
+2. When the AI needs an advanced action, it runs `tool_enable <tool_name>` (or `tool_enable` with no args to see all available tools).
 3. The server fires a `notifications/tools/list_changed` event, updating the client's capabilities instantly.
 
 ## 🛠️ Local Development

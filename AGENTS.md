@@ -33,7 +33,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 
 - `npm run build` must compile with zero errors
 - `npm start` must start without crashing
-- Integration: 5 base tools on list, `tool_enable` activates advanced tools, `scrape` returns markdown
+- Integration: 6 base tools on list, `tool_enable` without args lists available tools, `tool_enable map` activates it, `scrape` returns markdown
 
 ---
 

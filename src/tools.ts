@@ -42,18 +42,6 @@ const ADVANCED_TOOLS: Record<string, Tool> = {
     },
   },
 
-  check_crawl_status: {
-    name: "check_crawl_status",
-    description: "Check crawl job progress",
-    inputSchema: {
-      type: "object",
-      properties: {
-        id: { type: "string", description: "Crawl job ID" },
-      },
-      required: ["id"],
-    },
-  },
-
   extract: {
     name: "extract",
     description: "Extract structured data from URLs",
