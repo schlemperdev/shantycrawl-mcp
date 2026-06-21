@@ -32,11 +32,14 @@ Replaces the official `firecrawl-mcp` (which forces 28 tools into every session)
 Run instantly via `npx` (no installation required):
 
 ```bash
+# Local Firecrawl instance
 FIRECRAWL_API_URL=http://localhost:3002 npx shantycrawl-mcp
 
+# Firecrawl cloud (FIRECRAWL_API_KEY detected → default URL auto-selected)
+FIRECRAWL_API_KEY=fc-... npx shantycrawl-mcp
 ```
 
-*Note: Defaults to `http://localhost:3002` if `FIRECRAWL_API_URL` is not provided.*
+*Note: Defaults to `https://api.firecrawl.dev` if `FIRECRAWL_API_KEY` is set, otherwise `http://localhost:3002`. Always override with `FIRECRAWL_API_URL`.*
 
 ## 🛠️ Tool Architecture
 
@@ -67,6 +70,7 @@ Activate any tool instantly during a chat session. Example: `tool_enable map` un
 
 Add this to your `claude_desktop_config.json`:
 
+**Local Firecrawl:**
 ```json
 {
   "mcpServers": {
@@ -79,13 +83,31 @@ Add this to your `claude_desktop_config.json`:
     }
   }
 }
-
 ```
+
+**Firecrawl Cloud:**
+```json
+{
+  "mcpServers": {
+    "shantycrawl": {
+      "command": "npx",
+      "args": ["shantycrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-...",
+        "FIRECRAWL_API_URL": "https://api.firecrawl.dev"
+      }
+    }
+  }
+}
+```
+
+*Note: `FIRECRAWL_API_URL` is optional when using the cloud — it defaults automatically when `FIRECRAWL_API_KEY` is set.*
 
 ### OpenCode
 
 Add this to your workspace settings:
 
+**Local Firecrawl:**
 ```json
 {
   "mcp": {
@@ -98,7 +120,22 @@ Add this to your workspace settings:
     }
   }
 }
+```
 
+**Firecrawl Cloud:**
+```json
+{
+  "mcp": {
+    "shantycrawl": {
+      "type": "local",
+      "command": ["npx", "shantycrawl-mcp"],
+      "environment": {
+        "FIRECRAWL_API_KEY": "fc-...",
+        "FIRECRAWL_API_URL": "https://api.firecrawl.dev"
+      }
+    }
+  }
+}
 ```
 
 ## 🧠 Why shantycrawl-mcp?

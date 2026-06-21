@@ -10,7 +10,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - Source at `~/projects/shantycrawl-mcp/`.
 - Stack: Node.js + TypeScript + `@modelcontextprotocol/sdk`
 - Transport: stdio
-- API target: configurable via `FIRECRAWL_API_URL` env var (default `http://localhost:3002`).
+- API target: `FIRECRAWL_API_URL` env var (default `https://api.firecrawl.dev` if `FIRECRAWL_API_KEY` is set, else `http://localhost:3002`).
 
 ## Local Contracts
 
@@ -19,6 +19,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - In-memory state tracks which advanced tools are active in the session.
 - `tool_enable` adds tool to state and emits `notifications/tools/list_changed`.
 - `tool_disable` removes tool from state and emits `notifications/tools/list_changed`.
+- Authentication: `FIRECRAWL_API_KEY` env var → `Authorization: Bearer` header on all requests. Never exposed in tool schemas.
 - Extraction tools (scrape, crawl, etc.) call Firecrawl API at the configured `FIRECRAWL_API_URL` via HTTP fetch, return formatted Markdown.
 
 ## Work Guidance
