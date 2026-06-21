@@ -126,6 +126,3 @@ npm start
 
 MIT © [schlemperdev](https://www.google.com/search?q=https://github.com/schlemperdev)
 
-```
-
-```
