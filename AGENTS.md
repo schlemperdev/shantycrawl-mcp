@@ -117,16 +117,13 @@ Default section order:
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
-### Git Workflow (skill: `git-workflow`)
+### Git Workflow (skills: `git-workflow` + `git-merge`)
 
 - **`main` é sagrada** — zero commits diretos, toda mudança começa em branch de feature
-- **PR obrigatório** com squash merge para histórico linear
-- **Nunca force push em `main`**
+- **Agente cria PR e para** — skill `git-workflow`: branch → implementa → commita → push → `gh pr create`. Merge e publicação **não** são feitos pelo agente automaticamente.
+- **Merge sob demanda** — skill `git-merge` só roda quando solicitado explicitamente (merge + version + publish)
 - **Commits:** Conventional Commits em inglês (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
-- **Versionamento:** `npm version patch|minor|major` somente em `main` após merge
-- **Publicação:** `git push --follow-tags` + `npm publish`
-- **CI:** `npm run build` zero erros antes de mergear ou publicar
-- Guard clause: skill só ativa em projetos com `package.json` na raiz
+- **CI:** `npm run build` zero erros antes de abrir PR
 
 ## Child DOX Index
 
