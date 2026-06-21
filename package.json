@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "shantycrawl-mcp": "./dist/index.js"
+    "shantycrawl-mcp": "dist/index.js"
   },
   "files": [
     "dist"
