@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces the official `firecrawl-mcp` (28 tools upfront) with 5 base tools (`scrape`, `crawl`, `search`, `tool_enable`, `tool_disable`) and dynamic activation of advanced tools via `tool_enable`/`tool_disable`. Drastically reduces context consumption.
+Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces the official `firecrawl-mcp` (28 tools upfront) with 6 base tools (`scrape`, `crawl`, `search`, `check_crawl_status`, `tool_enable`, `tool_disable`) and dynamic activation of advanced tools via `tool_enable`/`tool_disable`. Drastically reduces context consumption.
 
 ## Ownership
 
@@ -36,7 +36,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 
 - `npm run build` must compile with zero errors
 - `npm start` must start without crashing
-- Integration: 5 base tools on list, `tool_enable` activates advanced tools, `scrape` returns markdown
+- Integration: 6 base tools on list, `tool_enable` activates advanced tools, `scrape` returns markdown
 
 ---
 
