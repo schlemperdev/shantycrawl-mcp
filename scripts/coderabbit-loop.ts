@@ -219,10 +219,15 @@ function checkGreenLight(
   const uncheckedMatch = body.match(/- \[ \]/g);
   const uncheckedChecklist = uncheckedMatch?.length ?? 0;
 
+  // CodeRabbit edits its existing review body to indicate no action needed.
+  // Detect this even if inline comments from a prior review are still active.
+  const noActionSignal = /no actionable comments/i.test(body);
+
   const green =
-    pendingInlines === 0 &&
-    uncheckedChecklist === 0 &&
-    (reviewState === "APPROVED" || reviewState === "COMMENTED");
+    noActionSignal ||
+    (pendingInlines === 0 &&
+     uncheckedChecklist === 0 &&
+     (reviewState === "APPROVED" || reviewState === "COMMENTED"));
 
   return { green, pendingInlines, uncheckedChecklist, reviewState };
 }
