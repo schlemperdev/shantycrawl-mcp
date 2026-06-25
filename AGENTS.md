@@ -21,6 +21,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - `tool_disable` removes tool from state and emits `notifications/tools/list_changed`.
 - Authentication: `FIRECRAWL_API_KEY` env var → `Authorization: Bearer` header on all requests. Never exposed in tool schemas.
 - Extraction tools (scrape, crawl, etc.) call Firecrawl API at the configured `FIRECRAWL_API_URL` via HTTP fetch, return formatted Markdown.
+- POST/PATCH tools use optional `buildBody` mapper for argument shaping before API call. No mapper = raw args sent unchanged (fallback-safe).
 
 ## Work Guidance
 
@@ -31,6 +32,8 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - AGENTS.md is the single source of project contracts — update when purpose, scope, or workflow changes.
 - To add a tool: register schema in `tools.ts`, add route in `firecrawl.ts`.
 - Keep schemas minimal (≤4 word descriptions, only vital params).
+- All routes target Firecrawl v2 API. Add `buildBody` to `Route` when API body shape differs from user schema.
+- GET tools with query params use `URLSearchParams` in `path` function.
 
 ## Verification
 
