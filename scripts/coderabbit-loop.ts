@@ -1,0 +1,327 @@
+#!/usr/bin/env tsx
+/**
+ * coderabbit-loop.ts — Poll CodeRabbit reviews, apply inline fixes, loop until green light.
+ *
+ * Exit codes:
+ *   0  GREEN LIGHT — no pending threads, checklist resolved, review approved
+ *   1  Checklist pending without inline comments — manual intervention needed
+ *   2  MAX_LOOPS exhausted without green light — manual intervention needed
+ *   3+ API or runtime error
+ *
+ * Usage:
+ *   tsx scripts/coderabbit-loop.ts <PR_NUMBER> [BRANCH_NAME]
+ *
+ * Env:
+ *   GH_OWNER   (default: schlemperdev)
+ *   GH_REPO    (default: shantycrawl-mcp)
+ */
+
+import { execSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// ── Config ──────────────────────────────────────────────────────────
+const OWNER = process.env.GH_OWNER ?? "schlemperdev";
+const REPO = process.env.GH_REPO ?? "shantycrawl-mcp";
+const MAX_LOOPS = 5;
+const POLL_INTERVAL_SEC = 60;
+const RE_REVIEW_WAIT_SEC = 120;
+const BOT_PATTERN = /coderabbit/i;
+
+// ── Args ────────────────────────────────────────────────────────────
+const PR = Number(process.argv[2]);
+if (!PR || !Number.isInteger(PR) || PR < 1) {
+  console.error("Usage: tsx scripts/coderabbit-loop.ts <PR_NUMBER> [BRANCH]");
+  process.exit(3);
+}
+const BRANCH = process.argv[3] ?? execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+
+// ── Helpers ─────────────────────────────────────────────────────────
+const gh = (endpoint: string, jq?: string): string => {
+  const cmd = jq
+    ? `gh api "${endpoint}" --jq ${JSON.stringify(jq)}`
+    : `gh api "${endpoint}"`;
+  return execSync(cmd, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
+};
+
+const ghRaw = (endpoint: string): string => {
+  return execSync(`gh api "${endpoint}"`, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
+};
+
+const sleep = (sec: number) =>
+  new Promise((r) => setTimeout(r, sec * 1000));
+
+const log = (msg: string) =>
+  console.log(`[${new Date().toISOString()}] ${msg}`);
+
+const ghComment = (body: string) => {
+  const escaped = body.replace(/'/g, "'\\''");
+  execSync(`gh pr comment ${PR} --body '${escaped}'`, { encoding: "utf-8" });
+};
+
+// ── GitHub types ────────────────────────────────────────────────────
+interface ReviewComment {
+  id: number;
+  path: string;
+  line: number | null;
+  start_line: number | null;
+  side: "LEFT" | "RIGHT";
+  body: string;
+  user: { login: string };
+  outdated: boolean;
+  subject_type: "line" | "file";
+}
+
+interface Review {
+  id: number;
+  user: { login: string };
+  state: string;
+  body: string;
+  submitted_at: string;
+}
+
+// ── API wrappers ────────────────────────────────────────────────────
+const getBotReviews = (): Review[] => {
+  const raw = ghRaw(`/repos/${OWNER}/${REPO}/pulls/${PR}/reviews`);
+  const all: Review[] = JSON.parse(raw);
+  return all.filter((r) => BOT_PATTERN.test(r.user?.login ?? ""));
+};
+
+const getActiveInlineComments = (): ReviewComment[] => {
+  const raw = ghRaw(`/repos/${OWNER}/${REPO}/pulls/${PR}/comments?per_page=100`);
+  const all: ReviewComment[] = JSON.parse(raw);
+  return all.filter(
+    (c) => BOT_PATTERN.test(c.user?.login ?? "") && c.outdated === false,
+  );
+};
+
+// ── Suggestion parsing ──────────────────────────────────────────────
+/**
+ * Extract CodeRabbit suggestion from comment body.
+ * Priority:
+ *   1. GitHub suggestion fence: `````suggestion\n...\n`````
+ *   2. Code block with language: `````<lang>\n...\n`````
+ * Returns { code, language } or null.
+ * Only the FIRST suggestion/code block is used.
+ */
+function extractSuggestion(body: string): { code: string; language: string } | null {
+  // GitHub suggestion fence
+  const sugMatch = body.match(/```suggestion\n([\s\S]*?)\n```/);
+  if (sugMatch) return { code: sugMatch[1].trimEnd(), language: "suggestion" };
+
+  // Code blocks with explicit language
+  const codeMatch = body.match(/```(\w+)\n([\s\S]*?)\n```/);
+  if (codeMatch) return { code: codeMatch[2].trimEnd(), language: codeMatch[1] };
+
+  // Fallback: plain code fence (no language)
+  const plainMatch = body.match(/```\n([\s\S]*?)\n```/);
+  if (plainMatch) return { code: plainMatch[1].trimEnd(), language: "" };
+
+  return null;
+}
+
+// ── Fix application ─────────────────────────────────────────────────
+/**
+ * Apply a single CodeRabbit inline suggestion to the local file.
+ * Replaces lines [startLine, endLine] (1-indexed, inclusive) with suggestion code.
+ *
+ * ponytail: naive line swap — doesn't handle partial-line diffs or
+ * context-aware merge. Upgrade to `patch`-based merge if CodeRabbit
+ * starts sending hunks instead of full-line suggestions.
+ */
+function applyFix(comment: ReviewComment): boolean {
+  const sug = extractSuggestion(comment.body);
+  if (!sug) {
+    log(`  ↪ No code block found in comment #${comment.id}, skipping`);
+    return false;
+  }
+
+  const filePath = resolve(comment.path);
+  let content: string;
+  try {
+    content = readFileSync(filePath, "utf-8");
+  } catch {
+    log(`  ⚠ File not found: ${comment.path}, skipping`);
+    return false;
+  }
+
+  const lines = content.split("\n");
+  // Determine target line range (1-indexed, inclusive)
+  let startLine: number;
+  let endLine: number;
+
+  if (comment.start_line && comment.line) {
+    // Multi-line comment
+    startLine = Math.min(comment.start_line, comment.line);
+    endLine = Math.max(comment.start_line, comment.line);
+  } else if (comment.line) {
+    // Single-line comment
+    startLine = comment.line;
+    endLine = comment.line;
+  } else {
+    // ponytail: file-level comment — ignore, can't map to specific lines
+    log(`  ↪ No line reference in comment #${comment.id}, skipping`);
+    return false;
+  }
+
+  if (startLine < 1 || endLine > lines.length) {
+    log(`  ⚠ Line range ${startLine}-${endLine} out of bounds (file has ${lines.length} lines), skipping`);
+    return false;
+  }
+
+  const sugLines = sug.code.split("\n");
+  const before = lines.slice(0, startLine - 1);
+  const after = lines.slice(endLine);
+  const newContent = [...before, ...sugLines, ...after].join("\n");
+
+  writeFileSync(filePath, newContent, "utf-8");
+  log(`  ✓ Applied fix: ${comment.path}:${startLine}-${endLine} (${sugLines.length} lines)`);
+  return true;
+}
+
+// ── GREEN LIGHT check ───────────────────────────────────────────────
+interface GreenLightResult {
+  green: boolean;
+  pendingInlines: number;
+  uncheckedChecklist: number;
+  reviewState: string;
+}
+
+function checkGreenLight(
+  comments: ReviewComment[],
+  reviews: Review[],
+): GreenLightResult {
+  const pendingInlines = comments.length;
+
+  // Latest bot review body → count unchecked checklist items
+  const latestReview = reviews.length > 0 ? reviews[reviews.length - 1] : null;
+  const reviewState = latestReview?.state ?? "NONE";
+  const body = latestReview?.body ?? "";
+
+  // Match `- [ ]` but not `- [x]`
+  const uncheckedMatch = body.match(/- \[ \]/g);
+  const uncheckedChecklist = uncheckedMatch?.length ?? 0;
+
+  const green =
+    pendingInlines === 0 &&
+    uncheckedChecklist === 0 &&
+    (reviewState === "APPROVED" || reviewState === "COMMENTED");
+
+  return { green, pendingInlines, uncheckedChecklist, reviewState };
+}
+
+// ── Main loop ───────────────────────────────────────────────────────
+async function main(): Promise<number> {
+  log(`CodeRabbit loop started — PR #${PR} branch=${BRANCH}`);
+
+  let reviews: Review[] = [];
+  let loopCount = 0;
+
+  // ─── Wait for first review ─────────────────────────────────────
+  log("Waiting for CodeRabbit to post first review...");
+  while (loopCount < MAX_LOOPS) {
+    loopCount++;
+    reviews = getBotReviews();
+    if (reviews.length > 0) {
+      log(`CodeRabbit review found (${reviews.length} total). Latest state: ${reviews[reviews.length - 1].state}`);
+      break;
+    }
+    log(`  No review yet (attempt ${loopCount}/${MAX_LOOPS}), sleeping ${POLL_INTERVAL_SEC}s...`);
+    await sleep(POLL_INTERVAL_SEC);
+  }
+
+  if (reviews.length === 0) {
+    log("✖ CodeRabbit never reviewed — timeout");
+    ghComment("⏰ CodeRabbit did not post a review within the polling window. Manual review required.");
+    return 3;
+  }
+
+  // ─── Iterative fix loop ────────────────────────────────────────
+  let totalFixes = 0;
+  loopCount = 0;
+
+  while (loopCount < MAX_LOOPS) {
+    loopCount++;
+    log(`── Iteration ${loopCount}/${MAX_LOOPS} ──`);
+
+    // Refresh data
+    reviews = getBotReviews();
+    const comments = getActiveInlineComments();
+
+    // GREEN LIGHT check
+    const status = checkGreenLight(comments, reviews);
+    log(
+      `  Status: pendingInlines=${status.pendingInlines} ` +
+      `checklist=${status.uncheckedChecklist} ` +
+      `reviewState=${status.reviewState}`,
+    );
+
+    if (status.green) {
+      log("✅ GREEN LIGHT — no pending threads, checklist resolved, review approved");
+      return 0;
+    }
+
+    // ─── Apply fixes from inline comments ONLY ───────────────────
+    // Safeguard 1: checklist never drives code changes — only inline comments.
+    let fixesThisRound = 0;
+    for (const c of comments) {
+      log(`  Processing comment #${c.id} — ${c.path}:${c.line ?? "?"}`);
+      const applied = applyFix(c);
+      if (applied) fixesThisRound++;
+    }
+
+    if (fixesThisRound > 0) {
+      totalFixes += fixesThisRound;
+      log(`  ${fixesThisRound} fix(es) applied (total: ${totalFixes}). Committing and pushing...`);
+
+      execSync("git add -A", { encoding: "utf-8" });
+      execSync('git commit -m "fix: address coderabbit code review feedback"', {
+        encoding: "utf-8",
+      });
+      execSync(`git push origin ${BRANCH}`, { encoding: "utf-8" });
+
+      log(`  Changes pushed. Waiting ${RE_REVIEW_WAIT_SEC}s for CodeRabbit to re-review...`);
+      await sleep(RE_REVIEW_WAIT_SEC);
+      continue;
+    }
+
+    // ─── No inline comments, but checklist pending ───────────────
+    // Safeguard 1 edge case: only checklist items remain, can't auto-fix.
+    if (status.uncheckedChecklist > 0) {
+      log(`✖ ${status.uncheckedChecklist} checklist item(s) unresolved, no inline comments to fix`);
+      ghComment(
+        `@${OWNER} CodeRabbit has **${status.uncheckedChecklist} unresolved checklist item(s)** ` +
+        "but no inline comments with code suggestions. Manual review needed.",
+      );
+      return 1;
+    }
+
+    // ─── Nothing to do, but still no green light ─────────────────
+    log("✖ No fixes applied, no checklist pending, but green light not reached");
+    ghComment(
+      `@${OWNER} CodeRabbit auto-fix loop stalled. ` +
+      `State: pendingInlines=${status.pendingInlines} ` +
+      `checklist=${status.uncheckedChecklist} reviewState=${status.reviewState}. Manual review needed.`,
+    );
+    return 3;
+  }
+
+  // ─── MAX_LOOPS exhausted ───────────────────────────────────────
+  log(`✖ MAX_LOOPS (${MAX_LOOPS}) reached without green light`);
+  ghComment(
+    `@${OWNER} ⚠️ Auto-fix loop reached **${MAX_LOOPS} iterations** without green light. ` +
+    "Manual intervention required.",
+  );
+  return 2;
+}
+
+// ── Entry ───────────────────────────────────────────────────────────
+main()
+  .then((code) => {
+    console.log(`\nExit code: ${code}`);
+    process.exit(code);
+  })
+  .catch((err) => {
+    console.error("Unhandled error:", err);
+    process.exit(3);
+  });
