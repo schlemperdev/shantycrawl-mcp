@@ -39,7 +39,6 @@ The remaining 22 advanced tools require activation via \`tool_enable("<name>")\`
 - **monitor_*** — Page change monitoring
 
 Always call \`tool_enable("<name>")\` before using any advanced tool.`;
-
 export function setupHandlers(server: Server): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = [...baseTools];
