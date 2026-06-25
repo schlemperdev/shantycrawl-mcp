@@ -20,7 +20,7 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 | `schemas.ts` | `Tool` definitions for 6 base tools (`scrape`, `crawl`, `search`, `check_crawl_status`, `tool_enable`, `tool_disable`) |
 | `tools.ts` | Registry of 22 advanced tools with minimal schemas |
 | `handlers.ts` | `ListToolsRequestSchema` (conditional), `ListPromptsRequestSchema`, `GetPromptRequestSchema`, and `CallToolRequestSchema` (state + HTTP routing) |
-| `firecrawl.ts` | HTTP routing map + `executeTool()` bridge to Firecrawl API (cloud or local) |
+| `firecrawl.ts` | HTTP routing map (method, path, optional buildBody, extractData) + `executeTool()` bridge to Firecrawl API (cloud or local) |
 
 ### Conventions
 - All imports use `.js` extension (NodeNext module resolution)
@@ -28,7 +28,7 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 - `handlers.ts` delegates HTTP to `firecrawl.ts`
 - State mutations (`activateTool`/`deactivateTool`) always followed by `server.sendToolListChanged()`
 - `tool_enable`/`tool_disable` accept optional `tool_name` — called without args they list available/active tools
-- `firecrawl.ts` ROUTES table maps each tool to method + path + extractData function
+- `firecrawl.ts` ROUTES table maps each tool to method, path, optional buildBody, and extractData
 
 ### Tool Inventory
 
@@ -45,6 +45,8 @@ TypeScript source for the ShantyCrawl MCP server. Implements the lazy-loading to
 - New API base URLs: add constant in `firecrawl.ts`
 - Keep descriptions ≤4 words to minimize context tokens
 - Only include essential params in schemas — omit niche options
+- POST/PATCH routes: add `buildBody` mapper when API body shape differs from user schema. Omit to send raw args.
+- All routes target v2 API. GET tools (research, monitor_*) use `URLSearchParams` for query args.
 - `tool_enable` without args lists all advanced tools with status; invalid names suggest available tools
 - `tool_disable` without args lists currently active tools; base tools cannot be disabled
 - The server exposes `shantycrawl-setup` via `ListPromptsRequestSchema`/`GetPromptRequestSchema` — update prompt content when tool inventory changes
