@@ -34,6 +34,7 @@ Custom MCP server for Firecrawl with lazy-loading tool architecture. Replaces th
 - Keep schemas minimal (≤4 word descriptions, only vital params).
 - All routes target Firecrawl v2 API. Add `buildBody` to `Route` when API body shape differs from user schema.
 - GET tools with query params use `URLSearchParams` in `path` function.
+- `scripts/coderabbit-loop.ts` automates CodeRabbit fix loop: polls PR reviews, applies inline suggestions, commits/pushes until green light or MAX_LOOPS (5). Invoke via `tsx scripts/coderabbit-loop.ts <PR_NUMBER> [BRANCH]` after `git-workflow` opens PR. Exit 0 → safe to merge via `git-merge`. Exit 1/2 → manual.
 
 ## Verification
 
