@@ -16,7 +16,7 @@
  *   GH_REPO    (default: shantycrawl-mcp)
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -34,18 +34,16 @@ if (!PR || !Number.isInteger(PR) || PR < 1) {
   console.error("Usage: tsx scripts/coderabbit-loop.ts <PR_NUMBER> [BRANCH]");
   process.exit(3);
 }
-const BRANCH = process.argv[3] ?? execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+const BRANCH = process.argv[3] ?? execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf-8" }).trim();
 
 // ── Helpers ─────────────────────────────────────────────────────────
 const gh = (endpoint: string, jq?: string): string => {
-  const cmd = jq
-    ? `gh api "${endpoint}" --jq ${JSON.stringify(jq)}`
-    : `gh api "${endpoint}"`;
-  return execSync(cmd, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
+  const args = jq ? ["api", endpoint, "--jq", jq] : ["api", endpoint];
+  return execFileSync("gh", args, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
 };
 
 const ghRaw = (endpoint: string): string => {
-  return execSync(`gh api "${endpoint}"`, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
+  return execFileSync("gh", ["api", endpoint], { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 }).trim();
 };
 
 const sleep = (sec: number) =>
@@ -55,8 +53,7 @@ const log = (msg: string) =>
   console.log(`[${new Date().toISOString()}] ${msg}`);
 
 const ghComment = (body: string) => {
-  const escaped = body.replace(/'/g, "'\\''");
-  execSync(`gh pr comment ${PR} --body '${escaped}'`, { encoding: "utf-8" });
+  execFileSync("gh", ["pr", "comment", String(PR), "--body", body], { encoding: "utf-8" });
 };
 
 // ── GitHub types ────────────────────────────────────────────────────
@@ -80,18 +77,38 @@ interface Review {
   submitted_at: string;
 }
 
+// ── Paginated GitHub API helper ─────────────────────────────────────
+/**
+ * Fetch all pages from a GitHub REST endpoint.
+ * Assumes the base URL already has its first `?` (e.g. `/repos/.../pulls/1/comments`).
+ */
+function paginateGh<T>(endpoint: string): T[] {
+  let page = 1;
+  const all: T[] = [];
+  const sep = endpoint.includes("?") ? "&" : "?";
+  while (true) {
+    const raw = execFileSync("gh", ["api", `${endpoint}${sep}per_page=100&page=${page}`], {
+      encoding: "utf-8",
+      maxBuffer: 10 * 1024 * 1024,
+    }).trim();
+    const items: T[] = JSON.parse(raw);
+    if (items.length === 0) break;
+    all.push(...items);
+    page++;
+  }
+  return all;
+}
+
 // ── API wrappers ────────────────────────────────────────────────────
 const getBotReviews = (): Review[] => {
-  const raw = ghRaw(`/repos/${OWNER}/${REPO}/pulls/${PR}/reviews`);
-  const all: Review[] = JSON.parse(raw);
+  const all = paginateGh<Review>(`/repos/${OWNER}/${REPO}/pulls/${PR}/reviews`);
   return all.filter((r) => BOT_PATTERN.test(r.user?.login ?? ""));
 };
 
 const getActiveInlineComments = (): ReviewComment[] => {
-  const raw = ghRaw(`/repos/${OWNER}/${REPO}/pulls/${PR}/comments?per_page=100`);
-  const all: ReviewComment[] = JSON.parse(raw);
+  const all = paginateGh<ReviewComment>(`/repos/${OWNER}/${REPO}/pulls/${PR}/comments`);
   return all.filter(
-    (c) => BOT_PATTERN.test(c.user?.login ?? "") && c.outdated === false,
+    (c) => BOT_PATTERN.test(c.user?.login ?? "") && c.outdated !== true,
   );
 };
 
@@ -248,6 +265,14 @@ async function main(): Promise<number> {
     reviews = getBotReviews();
     const comments = getActiveInlineComments();
 
+    // Apply descending line order per file (prevents index shift)
+    comments.sort((a, b) => {
+      if (a.path !== b.path) return a.path.localeCompare(b.path);
+      const aLine = a.start_line ?? a.line ?? 0;
+      const bLine = b.start_line ?? b.line ?? 0;
+      return bLine - aLine;
+    });
+
     // GREEN LIGHT check
     const status = checkGreenLight(comments, reviews);
     log(
@@ -274,11 +299,9 @@ async function main(): Promise<number> {
       totalFixes += fixesThisRound;
       log(`  ${fixesThisRound} fix(es) applied (total: ${totalFixes}). Committing and pushing...`);
 
-      execSync("git add -A", { encoding: "utf-8" });
-      execSync('git commit -m "fix: address coderabbit code review feedback"', {
-        encoding: "utf-8",
-      });
-      execSync(`git push origin ${BRANCH}`, { encoding: "utf-8" });
+      execFileSync("git", ["add", "-A"], { encoding: "utf-8" });
+      execFileSync("git", ["commit", "-m", "fix: address coderabbit code review feedback"], { encoding: "utf-8" });
+      execFileSync("git", ["push", "origin", BRANCH], { encoding: "utf-8" });
 
       log(`  Changes pushed. Waiting ${RE_REVIEW_WAIT_SEC}s for CodeRabbit to re-review...`);
       await sleep(RE_REVIEW_WAIT_SEC);
