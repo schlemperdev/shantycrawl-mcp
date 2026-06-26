@@ -18,6 +18,3 @@ export function deactivateTool(name: string): boolean {
   return activeTools.delete(name);
 }
 
-export function resetTools(): void {
-  activeTools.clear();
-}
