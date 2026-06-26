@@ -165,8 +165,6 @@ function formatSearchResults(data: unknown): string {
   if (!web || web.length === 0) return "No results found." + TOOL_ENABLE_HINT;
   return web.map((r) => `## [${r.title}](${r.url})\n${r.description}`).join("\n\n") + TOOL_ENABLE_HINT;
 }
-}
-
 
 
 
