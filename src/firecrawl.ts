@@ -162,8 +162,9 @@ const ROUTES: Record<string, Route> = {
 
 function formatSearchResults(data: unknown): string {
   const web = (data as { web?: Array<{ title: string; url: string; description: string }> })?.web;
-  if (!web || web.length === 0) return "No results found.";
+  if (!web || web.length === 0) return "No results found." + TOOL_ENABLE_HINT;
   return web.map((r) => `## [${r.title}](${r.url})\n${r.description}`).join("\n\n") + TOOL_ENABLE_HINT;
+}
 }
 
 function serializeCrawlStatus(data: unknown): string {
