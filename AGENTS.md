@@ -131,6 +131,13 @@ When the user requests a durable behavior change, record it here or in the relev
 - **Commits:** Conventional Commits em inglês (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
 - **CI:** `npm run build` zero erros antes de abrir PR
 
+### CodeRabbit Green Light Rule (OBRIGATÓRIO)
+
+- Nenhum PR pode ser mergeado sem green light do CodeRabbit.
+- `coderabbit-loop.ts` deve retornar exit 0 antes de qualquer merge.
+- Exit 1/2/3 = manual review obrigatório. Merge proibido até resolução.
+- Violação = quebra de contrato DOX. Reverter imediatamente, independente do conteúdo.
+
 ## Child DOX Index
 
 - **`src/AGENTS.md`** — Source code structure, file map, local contracts, and work guidance for the MCP server implementation.
