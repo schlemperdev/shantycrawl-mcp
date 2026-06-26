@@ -168,6 +168,7 @@ function formatSearchResults(data: unknown): string {
 }
 
 
+
 function serializeCrawlStatus(data: unknown): string {
   const d = data as { status?: string; completed?: number; total?: number; data?: unknown[] };
   const pages = d.data ?? [];
