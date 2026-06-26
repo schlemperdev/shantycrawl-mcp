@@ -1,6 +1,7 @@
 const API_KEY = process.env.FIRECRAWL_API_KEY ?? "";
 const DEFAULT_BASE = API_KEY ? "https://api.firecrawl.dev" : "http://localhost:3002";
 const API_BASE = process.env.FIRECRAWL_API_URL ?? DEFAULT_BASE;
+const TOOL_ENABLE_HINT = "\n\n---\n_Need more? Call tool_enable() to list and activate advanced tools._";
 
 type HttpMethod = "POST" | "GET" | "DELETE" | "PATCH";
 
@@ -21,7 +22,7 @@ const ROUTES: Record<string, Route> = {
       ...(args.onlyMainContent !== undefined ? { onlyMainContent: args.onlyMainContent } : {}),
       ...(args.waitFor !== undefined ? { waitFor: args.waitFor } : {}),
     }),
-    extractData: (d) => (d as { markdown?: string })?.markdown ?? "",
+    extractData: (d) => ((d as { markdown?: string })?.markdown ?? "") + TOOL_ENABLE_HINT,
   },
   crawl: {
     method: "POST",
@@ -31,7 +32,7 @@ const ROUTES: Record<string, Route> = {
       ...(args.maxDepth !== undefined ? { maxDepth: args.maxDepth } : {}),
       ...(args.limit !== undefined ? { limit: args.limit } : {}),
     }),
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d, null, 2) + TOOL_ENABLE_HINT,
   },
   search: {
     method: "POST",
@@ -161,9 +162,11 @@ const ROUTES: Record<string, Route> = {
 
 function formatSearchResults(data: unknown): string {
   const web = (data as { web?: Array<{ title: string; url: string; description: string }> })?.web;
-  if (!web || web.length === 0) return "No results found.";
-  return web.map((r) => `## [${r.title}](${r.url})\n${r.description}`).join("\n\n");
+  if (!web || web.length === 0) return "No results found." + TOOL_ENABLE_HINT;
+  return web.map((r) => `## [${r.title}](${r.url})\n${r.description}`).join("\n\n") + TOOL_ENABLE_HINT;
 }
+
+
 
 function serializeCrawlStatus(data: unknown): string {
   const d = data as { status?: string; completed?: number; total?: number; data?: unknown[] };
