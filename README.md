@@ -112,7 +112,7 @@ Add this to your workspace settings:
 | `search` | Execute web searches via Firecrawl |
 | `tool_enable` | Dynamically inject an advanced tool into the active session |
 | `tool_disable` | Unload an advanced tool to free up context |
-| `check_firecrawl_status` | Check the status of an async `crawl` job |
+| `check_crawl_status` | Check the status of an async `crawl` job |
 
 ### Lazy-Loaded Tools (22 Advanced)
 

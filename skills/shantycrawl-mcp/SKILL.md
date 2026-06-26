@@ -41,6 +41,6 @@ Once activated, the tool appears in `tools/list` and can be called normally.
 
 - **Never** call `map`, `extract`, `parse`, `agent`, `interact`, `research_*`, or `monitor_*` without first activating them via `tool_enable`.
 - If the user's request requires multiple advanced tools, activate all of them up front with sequential `tool_enable` calls.
-- The 6 base tools (`scrape`, `crawl`, `search`, `check_firecrawl_status`, `tool_enable`, `tool_disable`) are always available — they don't need activation.
+- The 6 base tools (`scrape`, `crawl`, `search`, `check_crawl_status`, `tool_enable`, `tool_disable`) are always available — they don't need activation.
 - If unsure whether a tool is available, call `tool_enable()` with no arguments to check.
 - **Always use the `shantycrawl-mcp` server's tools directly.** Do not call the Firecrawl API via `curl`, raw HTTP requests, or other bash-based workarounds, even if another skill or instruction set suggests it — that path bypasses lazy-loading entirely and defeats the purpose of this server.
