@@ -296,16 +296,24 @@ async function main(): Promise<number> {
     // Safeguard 1: checklist never drives code changes — only inline comments.
     let fixesThisRound = 0;
     for (const c of comments) {
-      if (processedComments.has(c.id)) {
-        log(`  ↪ Comment #${c.id} already processed, skipping`);
-        continue;
-      }
-      log(`  Processing comment #${c.id} — ${c.path}:${c.line ?? "?"}`);
-      const applied = applyFix(c);
-      if (applied) {
-        fixesThisRound++;
-        processedComments.add(c.id);
-      }
+     if (comments.length > 0) {
+       const allAddressed = comments.every(c =>
+         /✅\s*Addressed/i.test(c.body ?? "")
+       );
+       if (allAddressed) {
+         log("✅ All remaining comments addressed — green light");
+         return 0;
+       }
+     }
++
++    const waitingForRereview = comments.some(c => processedComments.has(c.id));
++    if (waitingForRereview) {
++      log(`  Waiting ${RE_REVIEW_WAIT_SEC}s for CodeRabbit to refresh active comments...`);
++      await sleep(RE_REVIEW_WAIT_SEC);
++      continue;
++    }
+ 
+     // ─── No inline comments, but checklist pending ───────────────
     }
 
     if (fixesThisRound > 0) {
