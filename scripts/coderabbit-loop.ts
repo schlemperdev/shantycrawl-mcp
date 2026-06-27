@@ -105,6 +105,14 @@ const getBotReviews = (): Review[] => {
   return all.filter((r) => BOT_PATTERN.test(r.user?.login ?? ""));
 };
 
+// ponytail: separate endpoint — issue comments != review comments
+const getBotPRComments = (): string[] => {
+  const all = paginateGh<{ user: { login: string }; body: string }>(
+    `/repos/${OWNER}/${REPO}/issues/${PR}/comments`,
+  );
+  return all.filter((c) => BOT_PATTERN.test(c.user?.login ?? "")).map((c) => c.body);
+};
+
 const getActiveInlineComments = (): ReviewComment[] => {
   const all = paginateGh<ReviewComment>(`/repos/${OWNER}/${REPO}/pulls/${PR}/comments`);
   return all.filter(
@@ -248,6 +256,11 @@ async function main(): Promise<number> {
       log(`CodeRabbit review found (${reviews.length} total). Latest state: ${reviews[reviews.length - 1].state}`);
       break;
     }
+    // ponytail: check issue comments — CodeRabbit may green-light via comment before formal review
+    if (getBotPRComments().some(b => /no actionable comments were generated/i.test(b))) {
+      log("✅ CodeRabbit green light via PR comment");
+      return 0;
+    }
     log(`  No review yet (attempt ${loopCount}/${MAX_LOOPS}), sleeping ${POLL_INTERVAL_SEC}s...`);
     await sleep(POLL_INTERVAL_SEC);
   }
@@ -270,6 +283,12 @@ async function main(): Promise<number> {
     // Refresh data
     reviews = getBotReviews();
     const comments = getActiveInlineComments();
+
+    // ponytail: check issue comments each iteration — CodeRabbit may post "no actionable" mid-loop
+    if (getBotPRComments().some(b => /no actionable comments were generated/i.test(b))) {
+      log("✅ CodeRabbit green light via PR comment");
+      return 0;
+    }
 
     // Apply descending line order per file (prevents index shift)
     comments.sort((a, b) => {
