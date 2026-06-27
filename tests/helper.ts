@@ -21,11 +21,16 @@ export function send(method: string, params: unknown = {}): Promise<any> {
   return new Promise((resolve, reject) => {
     const id = ++idCounter;
     const req = JSON.stringify({ jsonrpc: "2.0", id, method, params });
+    const timer = setTimeout(() => {
+      rl.removeListener("line", onLine);
+      reject(new Error(`Timeout: id=${id} method=${method}`));
+    }, 5000);
 
     const onLine = (line: string) => {
       try {
         const msg = JSON.parse(line);
         if (msg.id === id) {
+          clearTimeout(timer);
           rl.removeListener("line", onLine);
           resolve(msg);
         }
@@ -36,11 +41,6 @@ export function send(method: string, params: unknown = {}): Promise<any> {
 
     rl.on("line", onLine);
     server.stdin.write(req + "\n");
-
-    setTimeout(() => {
-      rl.removeListener("line", onLine);
-      reject(new Error(`Timeout: id=${id} method=${method}`));
-    }, 5000);
   });
 }
 

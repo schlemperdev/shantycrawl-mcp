@@ -140,15 +140,18 @@ const ROUTES: Record<string, Route> = {
     path: "/v2/monitor",
     buildBody: (args) => {
       const targets: Array<{ type: "scrape"; urls: string[] }> = [];
-      if (args.page) targets.push({ type: "scrape", urls: [args.page as string] });
-      if (args.pages) (args.pages as string[]).forEach((u) => targets.push({ type: "scrape", urls: [u] }));
+      if (typeof args.page === "string") targets.push({ type: "scrape", urls: [args.page] });
+      if (Array.isArray(args.pages)) {
+        for (const u of args.pages) {
+          if (typeof u === "string") targets.push({ type: "scrape", urls: [u] });
+        }
+      }
 
       let schedule: Record<string, string> = { cron: "0 0 * * *", timezone: "UTC" };
-      if (args.schedule) {
-        const s = args.schedule as string;
-        schedule = s.includes("*") || /^\d/.test(s)
-          ? { cron: s, timezone: "UTC" }
-          : { text: s, timezone: "UTC" };
+      if (typeof args.schedule === "string") {
+        schedule = args.schedule.includes("*")
+          ? { cron: args.schedule, timezone: "UTC" }
+          : { text: args.schedule, timezone: "UTC" };
       }
 
       return {

@@ -19,15 +19,15 @@ const SETUP_PROMPT = `# ShantyCrawl MCP — Tool Usage Guide
 This server provides 28 Firecrawl tools. Only 6 base tools are active by default:
 \`scrape\`, \`crawl\`, \`search\`, \`check_crawl_status\`, \`tool_enable\`, \`tool_disable\`
 
-The remaining 22 advanced tools require activation via \`tool_enable("<name>")\` before use.
-
-## How to use
-
-1. Call \`tool_enable()\` with no arguments to see all available advanced tools.
-2. Call \`tool_enable("map")\` to activate the map tool.
-3. Use the activated tool normally — it will now appear in the tools list.
-
-## Advanced tool categories
+The remaining 22 advanced tools auto-activate on first use, or can be pre-loaded via \`tool_enable("<name>")\`.
+ 
+ ## How to use
+ 
+ 1. Call \`tool_enable()\` with no arguments to see all available advanced tools.
+ 2. Call a tool directly (e.g. \`map\`) — it activates for one call then auto-deactivates.
+ 3. Or call \`tool_enable("map")\` to keep it active across multiple calls.
+ 
+ ## Advanced tool categories
 
 - **map** — Discover all URLs on a website
 - **extract** — Extract structured data from URLs
@@ -38,7 +38,7 @@ The remaining 22 advanced tools require activation via \`tool_enable("<name>")\`
 - **research_*** — Paper and GitHub research
 - **monitor_*** — Page change monitoring
 
-Always call \`tool_enable("<name>")\` before using any advanced tool.`;
+Advanced tools also auto-activate on first use and auto-deactivate after. Use \`tool_enable("<name>")\` to keep a tool active.`;
 export function setupHandlers(server: Server): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = [...baseTools];
@@ -183,8 +183,8 @@ export function setupHandlers(server: Server): void {
         try {
           return await executeTool(name, (args ?? {}) as Record<string, unknown>);
         } finally {
-          if (isAdvanced && !wasActive) {
-            deactivateTool(name);
+          if (isAdvanced && !wasActive && deactivateTool(name)) {
+            await server.sendToolListChanged();
           }
         }
       }

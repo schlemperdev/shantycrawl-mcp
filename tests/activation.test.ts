@@ -5,8 +5,9 @@ async function main() {
 
   // map should auto-activate when called without tool_enable
   const r1 = await callTool("map", { url: "http://example.com" });
-  // Either success (Firecrawl responds) or error (no server) — but NOT "unknown tool"
-  assert(!r1.error, `map should not be unknown: ${JSON.stringify(r1)}`);
+  const t1 = r1.result?.content?.[0]?.text ?? "";
+  assert(!(r1.result?.isError && t1.includes("Unknown tool")),
+    `map should not be unknown: ${JSON.stringify(r1)}`);
 
   // After call, tool should NOT be in active list
   const disableList = await callTool("tool_disable", {});

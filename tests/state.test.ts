@@ -38,7 +38,7 @@ async function main() {
 
   // tool_disable() without args lists active
   await callTool("tool_enable", { tool_name: "extract" });
-  const r7 = await callTool("tool_disable", { arguments: {} });
+  const r7 = await callTool("tool_disable", {});
   assert(r7.result?.content?.[0]?.text?.includes("extract"), "disable list missing extract");
 
   console.log("PASS state.test.ts");

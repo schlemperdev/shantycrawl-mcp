@@ -22,16 +22,21 @@ async function main() {
 
   // extract — requires urls array, implicit activation
   const r3 = await callTool("extract", { urls: ["http://example.com"], prompt: "list main topics" });
-  // extract with prompt needs Firecrawl AI — may error but shouldn't be "unknown"
-  assert(!r3.error, `extract should not be unknown: ${JSON.stringify(r3.error ?? "")}`);
+  const t3 = r3.result?.content?.[0]?.text ?? "";
+  assert(!(r3.result?.isError && t3.includes("Unknown tool")),
+    `extract should not be unknown: ${JSON.stringify(r3)}`);
 
   // Agent
   const r4 = await callTool("agent", { prompt: "what is the weather" });
-  assert(!r4.error, `agent should not be unknown: ${JSON.stringify(r4.error ?? "")}`);
+  const t4 = r4.result?.content?.[0]?.text ?? "";
+  assert(!(r4.result?.isError && t4.includes("Unknown tool")),
+    `agent should not be unknown: ${JSON.stringify(r4)}`);
 
   // interact with fake scrapeId — should not be unknown
   const r5 = await callTool("interact", { scrapeId: "fake", prompt: "click something" });
-  assert(!r5.error, `interact should not be unknown: ${JSON.stringify(r5.error ?? "")}`);
+  const t5 = r5.result?.content?.[0]?.text ?? "";
+  assert(!(r5.result?.isError && t5.includes("Unknown tool")),
+    `interact should not be unknown: ${JSON.stringify(r5)}`);
 
   console.log("PASS advanced.test.ts");
   stopServer();
