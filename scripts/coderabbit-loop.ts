@@ -314,28 +314,25 @@ async function main(): Promise<number> {
     // ─── Apply fixes from inline comments ONLY ───────────────────
     // Safeguard 1: checklist never drives code changes — only inline comments.
     let fixesThisRound = 0;
+    let sawProcessedComments = false;
     for (const c of comments) {
-      let fixesThisRound = 0;
-      let sawProcessedComments = false;
-      for (const c of comments) {
-        if (processedComments.has(c.id)) {
-          sawProcessedComments = true;
-          log(`  ↪ Comment #${c.id} already processed, skipping`);
-          continue;
-        }
-        log(`  Processing comment #${c.id} — ${c.path}:${c.line ?? "?"}`);
-        const applied = applyFix(c);
-        if (applied) {
-          fixesThisRound++;
-          processedComments.add(c.id);
-        }
-      }
-
-      if (comments.length > 0 && sawProcessedComments && comments.every(c => processedComments.has(c.id))) {
-        log(`  Waiting ${RE_REVIEW_WAIT_SEC}s for CodeRabbit to refresh active comments...`);
-        await sleep(RE_REVIEW_WAIT_SEC);
+      if (processedComments.has(c.id)) {
+        sawProcessedComments = true;
+        log(`  ↪ Comment #${c.id} already processed, skipping`);
         continue;
       }
+      log(`  Processing comment #${c.id} — ${c.path}:${c.line ?? "?"}`);
+      const applied = applyFix(c);
+      if (applied) {
+        fixesThisRound++;
+        processedComments.add(c.id);
+      }
+    }
+
+    if (comments.length > 0 && sawProcessedComments && comments.every(c => processedComments.has(c.id))) {
+      log(`  Waiting ${RE_REVIEW_WAIT_SEC}s for CodeRabbit to refresh active comments...`);
+      await sleep(RE_REVIEW_WAIT_SEC);
+      continue;
     }
 
     if (fixesThisRound > 0) {

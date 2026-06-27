@@ -19,15 +19,15 @@ const SETUP_PROMPT = `# ShantyCrawl MCP — Tool Usage Guide
 This server provides 28 Firecrawl tools. Only 6 base tools are active by default:
 \`scrape\`, \`crawl\`, \`search\`, \`check_crawl_status\`, \`tool_enable\`, \`tool_disable\`
 
-The remaining 22 advanced tools require activation via \`tool_enable("<name>")\` before use.
-
-## How to use
-
-1. Call \`tool_enable()\` with no arguments to see all available advanced tools.
-2. Call \`tool_enable("map")\` to activate the map tool.
-3. Use the activated tool normally — it will now appear in the tools list.
-
-## Advanced tool categories
+The remaining 22 advanced tools auto-activate on first use, or can be pre-loaded via \`tool_enable("<name>")\`.
+ 
+ ## How to use
+ 
+ 1. Call \`tool_enable()\` with no arguments to see all available advanced tools.
+ 2. Call a tool directly (e.g. \`map\`) — it activates for one call then auto-deactivates.
+ 3. Or call \`tool_enable("map")\` to keep it active across multiple calls.
+ 
+ ## Advanced tool categories
 
 - **map** — Discover all URLs on a website
 - **extract** — Extract structured data from URLs
@@ -38,7 +38,7 @@ The remaining 22 advanced tools require activation via \`tool_enable("<name>")\`
 - **research_*** — Paper and GitHub research
 - **monitor_*** — Page change monitoring
 
-Always call \`tool_enable("<name>")\` before using any advanced tool.`;
+Advanced tools also auto-activate on first use and auto-deactivate after. Use \`tool_enable("<name>")\` to keep a tool active.`;
 export function setupHandlers(server: Server): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = [...baseTools];
@@ -170,7 +170,27 @@ export function setupHandlers(server: Server): void {
             isError: true,
           };
         }
-        return executeTool(name, (args ?? {}) as Record<string, unknown>);
+
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/handlers.ts` around lines 174 - 176, Update the shantycrawl-setup prompt
+text to reflect lazy activation: advanced tools now support one-shot implicit
+activation, so remove or revise any wording like “require activation” and
+“Always call tool_enable(...) before use.” Make the change in the prompt content
+exposed through the prompt handlers, especially the setup prompt returned by the
+relevant prompt endpoint in src/handlers.ts, and ensure it matches the current
+behavior of hasAdvancedTool and the tool auto-activate/auto-deactivate contract.
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/handlers.ts` around lines 176 - 188, The implicit activation logic in
+handlers.ts can deactivate a tool that was explicitly enabled by another request
+because executeTool cleanup only uses a boolean snapshot from isToolActive.
+Update the tool lifecycle around executeTool, activateTool, and deactivateTool
+to track ownership or a reference count for advanced tools, so the finally block
+only undoes the implicit activation it created and never clobbers a concurrent
+tool_enable("map") state.
+        }
       }
     }
   });
