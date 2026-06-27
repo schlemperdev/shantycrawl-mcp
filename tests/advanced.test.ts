@@ -4,8 +4,16 @@ async function main() {
   startServer();
 
   // map — implicit activation
-  const r1 = await callTool("map", { url: "http://example.com" });
-  assert(!r1.result?.isError, `map should succeed: ${JSON.stringify(r1.result?.content?.[0]?.text ?? r1.error ?? "")}`);
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@tests/advanced.test.ts` around lines 7 - 8, The advanced test for
+callTool("map") is coupling implicit activation to a live Firecrawl success
+path; update the assertion so it no longer requires a successful map result when
+no local instance or credentials are available. Keep the test focused on the
+contract for implicit activation by checking that the tool is invoked/selected
+correctly in tests/advanced.test.ts, and avoid treating API/request errors from
+map as a failure.
   // ponytail: local Firecrawl may return empty link list — just assert no crash
 
   // After map call, should not be in tools/list

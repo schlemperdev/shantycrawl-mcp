@@ -171,21 +171,25 @@ export function setupHandlers(server: Server): void {
           };
         }
 
-        // ponytail: implicit activation — tool auto-activates for one call then auto-deactivates
-        // Explicit tool_enable() persists until tool_disable()
-        const isAdvanced = hasAdvancedTool(name);
-        const wasActive = isAdvanced && isToolActive(name);
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
 
-        if (isAdvanced && !wasActive) {
-          activateTool(name);
-        }
+In `@src/handlers.ts` around lines 174 - 176, Update the shantycrawl-setup prompt
+text to reflect lazy activation: advanced tools now support one-shot implicit
+activation, so remove or revise any wording like “require activation” and
+“Always call tool_enable(...) before use.” Make the change in the prompt content
+exposed through the prompt handlers, especially the setup prompt returned by the
+relevant prompt endpoint in src/handlers.ts, and ensure it matches the current
+behavior of hasAdvancedTool and the tool auto-activate/auto-deactivate contract.
+rest with a brief reason, keep changes minimal, and validate.
 
-        try {
-          return await executeTool(name, (args ?? {}) as Record<string, unknown>);
-        } finally {
-          if (isAdvanced && !wasActive && deactivateTool(name)) {
-            await server.sendToolListChanged();
-          }
+In `@src/handlers.ts` around lines 176 - 188, The implicit activation logic in
+handlers.ts can deactivate a tool that was explicitly enabled by another request
+because executeTool cleanup only uses a boolean snapshot from isToolActive.
+Update the tool lifecycle around executeTool, activateTool, and deactivateTool
+to track ownership or a reference count for advanced tools, so the finally block
+only undoes the implicit activation it created and never clobbers a concurrent
+tool_enable("map") state.
         }
       }
     }
