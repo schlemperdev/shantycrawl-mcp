@@ -32,7 +32,7 @@ const ROUTES: Record<string, Route> = {
       ...(args.maxDepth !== undefined ? { maxDepth: args.maxDepth } : {}),
       ...(args.limit !== undefined ? { limit: args.limit } : {}),
     }),
-    extractData: (d) => JSON.stringify(d, null, 2) + TOOL_ENABLE_HINT,
+    extractData: (d) => JSON.stringify(d) + TOOL_ENABLE_HINT,
   },
   search: {
     method: "POST",
@@ -61,7 +61,7 @@ const ROUTES: Record<string, Route> = {
       urls: args.urls,
       ...(args.prompt ? { prompt: args.prompt } : {}),
     }),
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
   parse: {
     method: "POST",
@@ -72,8 +72,8 @@ const ROUTES: Record<string, Route> = {
     }),
     extractData: (d) => (d as { markdown?: string })?.markdown ?? "",
   },
-  feedback:      { method: "POST", path: "/v2/feedback",     extractData: (d) => JSON.stringify(d, null, 2) },
-  search_feedback: { method: "POST", path: (a) => `/v2/search/${a.searchId}/feedback`, extractData: (d) => JSON.stringify(d, null, 2) },
+  feedback:      { method: "POST", path: "/v2/feedback",     extractData: (d) => JSON.stringify(d) },
+  search_feedback: { method: "POST", path: (a) => `/v2/search/${a.searchId}/feedback`, extractData: (d) => JSON.stringify(d) },
   check_crawl_status: { method: "GET", path: (a) => `/v2/crawl/${a.id}`, extractData: (d) => serializeCrawlStatus(d) },
   agent: {
     method: "POST",
@@ -82,9 +82,9 @@ const ROUTES: Record<string, Route> = {
       prompt: args.prompt,
       ...(args.urls ? { urls: args.urls } : {}),
     }),
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
-  agent_status:  { method: "GET",  path: (a) => `/v2/agent/${a.id}`, extractData: (d) => JSON.stringify(d, null, 2) },
+  agent_status:  { method: "GET",  path: (a) => `/v2/agent/${a.id}`, extractData: (d) => JSON.stringify(d) },
   interact: {
     method: "POST",
     path: (a) => `/v2/scrape/${a.scrapeId}/interact`,
@@ -93,9 +93,9 @@ const ROUTES: Record<string, Route> = {
       if (args.prompt) body.prompt = args.prompt;
       return body;
     },
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
-  interact_stop: { method: "DELETE", path: (a) => `/v2/scrape/${a.scrapeId}/interact`, extractData: (d) => JSON.stringify(d, null, 2) },
+  interact_stop: { method: "DELETE", path: (a) => `/v2/scrape/${a.scrapeId}/interact`, extractData: (d) => JSON.stringify(d) },
   research_search_papers: {
     method: "GET",
     path: (a) => {
@@ -106,7 +106,7 @@ const ROUTES: Record<string, Route> = {
     },
     extractData: (d) => formatPapers(d),
   },
-  research_inspect_paper: { method: "GET", path: (a) => `/v2/search/research/papers/${a.paperId}`, extractData: (d) => JSON.stringify(d, null, 2) },
+  research_inspect_paper: { method: "GET", path: (a) => `/v2/search/research/papers/${a.paperId}`, extractData: (d) => JSON.stringify(d) },
   research_read_paper: {
     method: "GET",
     path: (a) => {
@@ -115,7 +115,7 @@ const ROUTES: Record<string, Route> = {
       const qs = params.toString();
       return `/v2/search/research/papers/${a.paperId}${qs ? `?${qs}` : ""}`;
     },
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
   research_related_papers: {
     method: "GET",
@@ -125,7 +125,7 @@ const ROUTES: Record<string, Route> = {
       if (a.intent) params.set("intent", a.intent as string);
       return `/v2/search/research/papers/similar?${params.toString()}`;
     },
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
   research_search_github: {
     method: "GET",
@@ -133,7 +133,7 @@ const ROUTES: Record<string, Route> = {
       const params = new URLSearchParams({ query: a.query as string });
       return `/v2/search/research/github?${params.toString()}`;
     },
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
   monitor_create: {
     method: "POST",
@@ -149,15 +149,15 @@ const ROUTES: Record<string, Route> = {
         targets,
       };
     },
-    extractData: (d) => JSON.stringify(d, null, 2),
+    extractData: (d) => JSON.stringify(d),
   },
-  monitor_list:    { method: "GET",  path: "/v2/monitor",             extractData: (d) => JSON.stringify(d, null, 2) },
-  monitor_get:     { method: "GET",  path: (a) => `/v2/monitor/${a.id}`,           extractData: (d) => JSON.stringify(d, null, 2) },
+  monitor_list:    { method: "GET",  path: "/v2/monitor",             extractData: (d) => JSON.stringify(d) },
+  monitor_get:     { method: "GET",  path: (a) => `/v2/monitor/${a.id}`,           extractData: (d) => JSON.stringify(d) },
   monitor_delete:  { method: "DELETE", path: (a) => `/v2/monitor/${a.id}`,         extractData: () => "Monitor deleted." },
-  monitor_run:     { method: "POST", path: (a) => `/v2/monitor/${a.id}/run`,       extractData: (d) => JSON.stringify(d, null, 2) },
-  monitor_update:  { method: "PATCH", path: (a) => `/v2/monitor/${a.id}`,          extractData: (d) => JSON.stringify(d, null, 2) },
-  monitor_checks:  { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks`,    extractData: (d) => JSON.stringify(d, null, 2) },
-  monitor_check:   { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks/${a.checkId}`, extractData: (d) => JSON.stringify(d, null, 2) },
+  monitor_run:     { method: "POST", path: (a) => `/v2/monitor/${a.id}/run`,       extractData: (d) => JSON.stringify(d) },
+  monitor_update:  { method: "PATCH", path: (a) => `/v2/monitor/${a.id}`,          extractData: (d) => JSON.stringify(d) },
+  monitor_checks:  { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks`,    extractData: (d) => JSON.stringify(d) },
+  monitor_check:   { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks/${a.checkId}`, extractData: (d) => JSON.stringify(d) },
 };
 
 function formatSearchResults(data: unknown): string {
@@ -171,7 +171,7 @@ function formatSearchResults(data: unknown): string {
 function serializeCrawlStatus(data: unknown): string {
   const d = data as { status?: string; completed?: number; total?: number; data?: unknown[] };
   const pages = d.data ?? [];
-  const content = pages.map((p: unknown) => (p as { markdown?: string })?.markdown ?? JSON.stringify(p, null, 2)).join("\n\n---\n\n");
+  const content = pages.map((p: unknown) => (p as { markdown?: string })?.markdown ?? JSON.stringify(p)).join("\n\n---\n\n");
   return `Status: ${d.status ?? "unknown"} (${d.completed ?? 0}/${d.total ?? 0})\n\n${content}`;
 }
 
@@ -227,7 +227,7 @@ export async function executeTool(toolName: string, args: Record<string, unknown
     }
 
     const data = jsonResult?.data ?? jsonResult;
-    const text = route.extractData ? route.extractData(data) : JSON.stringify(data, null, 2);
+    const text = route.extractData ? route.extractData(data) : JSON.stringify(data);
 
     return { content: [{ type: "text", text }] };
   } catch (err) {
