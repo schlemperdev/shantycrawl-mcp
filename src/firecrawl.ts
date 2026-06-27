@@ -139,14 +139,23 @@ const ROUTES: Record<string, Route> = {
     method: "POST",
     path: "/v2/monitor",
     buildBody: (args) => {
-      const targets: { url: string }[] = [];
-      if (args.page) targets.push({ url: args.page as string });
-      if (args.pages) (args.pages as string[]).forEach((u) => targets.push({ url: u }));
+      const targets: Array<{ type: "scrape"; urls: string[] }> = [];
+      if (args.page) targets.push({ type: "scrape", urls: [args.page as string] });
+      if (args.pages) (args.pages as string[]).forEach((u) => targets.push({ type: "scrape", urls: [u] }));
+
+      let schedule: Record<string, string> = { cron: "0 0 * * *", timezone: "UTC" };
+      if (args.schedule) {
+        const s = args.schedule as string;
+        schedule = s.includes("*") || /^\d/.test(s)
+          ? { cron: s, timezone: "UTC" }
+          : { text: s, timezone: "UTC" };
+      }
+
       return {
-        ...(args.goal ? { goal: args.goal } : {}),
-        ...(args.name ? { name: args.name } : {}),
-        schedule: args.schedule ? { type: "interval", interval: args.schedule as string } : { type: "daily" },
+        name: (args.name as string) ?? `monitor-${Date.now()}`,
+        schedule,
         targets,
+        ...(args.goal ? { goal: args.goal as string } : {}),
       };
     },
     extractData: (d) => JSON.stringify(d),
@@ -155,7 +164,7 @@ const ROUTES: Record<string, Route> = {
   monitor_get:     { method: "GET",  path: (a) => `/v2/monitor/${a.id}`,           extractData: (d) => JSON.stringify(d) },
   monitor_delete:  { method: "DELETE", path: (a) => `/v2/monitor/${a.id}`,         extractData: () => "Monitor deleted." },
   monitor_run:     { method: "POST", path: (a) => `/v2/monitor/${a.id}/run`,       extractData: (d) => JSON.stringify(d) },
-  monitor_update:  { method: "PATCH", path: (a) => `/v2/monitor/${a.id}`,          extractData: (d) => JSON.stringify(d) },
+  monitor_update:  { method: "PATCH", path: (a) => `/v2/monitor/${a.id}`, buildBody: (a) => a.body as Record<string, unknown> ?? {}, extractData: (d) => JSON.stringify(d) },
   monitor_checks:  { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks`,    extractData: (d) => JSON.stringify(d) },
   monitor_check:   { method: "GET",  path: (a) => `/v2/monitor/${a.id}/checks/${a.checkId}`, extractData: (d) => JSON.stringify(d) },
 };

@@ -216,8 +216,9 @@ const ADVANCED_TOOLS: Record<string, Tool> = {
         pages: { type: "array", items: { type: "string" }, description: "Multiple URLs" },
         goal: { type: "string", description: "What changes matter" },
         name: { type: "string", description: "Monitor name" },
-        schedule: { type: "string", description: "Cron or daily time" },
+        schedule: { type: "string", description: "Cron or text" },
       },
+      required: ["name"],
     },
   },
 

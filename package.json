@@ -31,7 +31,8 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && chmod +x dist/index.js",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test": "npm run build && for f in tests/*.test.ts; do echo \"--- $f ---\"; npx tsx \"$f\" || exit 1; done"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0"

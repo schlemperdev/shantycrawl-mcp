@@ -170,7 +170,23 @@ export function setupHandlers(server: Server): void {
             isError: true,
           };
         }
-        return executeTool(name, (args ?? {}) as Record<string, unknown>);
+
+        // ponytail: implicit activation — tool auto-activates for one call then auto-deactivates
+        // Explicit tool_enable() persists until tool_disable()
+        const isAdvanced = hasAdvancedTool(name);
+        const wasActive = isAdvanced && isToolActive(name);
+
+        if (isAdvanced && !wasActive) {
+          activateTool(name);
+        }
+
+        try {
+          return await executeTool(name, (args ?? {}) as Record<string, unknown>);
+        } finally {
+          if (isAdvanced && !wasActive) {
+            deactivateTool(name);
+          }
+        }
       }
     }
   });
